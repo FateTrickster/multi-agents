@@ -21,7 +21,7 @@ from app.agents.tools.bailian_search_app_client import (
     query_bailian_search_app,
 )
 from app.config import settings
-from app.db.redis_client import get_redis_client
+from app.db.redis_client import get_redis_client, mark_room_active
 from app.db.session import AsyncSessionLocal
 from app.models.message import Message, MessageStatus, SenderType
 from app.models.user import User
@@ -347,10 +347,7 @@ class BaseRoleAgent(ABC):
                 final_status = MessageStatus.failed
 
             if success and db_update_success and full_content.strip():
-                redis_client = get_redis_client()
-                now_ts = time.time()
-                await redis_client.set(f"room:{room_id}:last_msg_time", now_ts)
-                await redis_client.sadd("active_rooms", room_id)
+                await mark_room_active(room_id, client=get_redis_client(), message=True)
 
             if success:
                 _agent_log(

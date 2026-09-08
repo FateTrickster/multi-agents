@@ -5,6 +5,14 @@ import pytest
 from app.agents import mention_entry_worker as mew
 
 
+@pytest.fixture(autouse=True)
+def _use_multi_agent_mode(monkeypatch):
+    async def _mode_multi(_room_id):
+        return "multi"
+
+    monkeypatch.setattr(mew, "get_room_agent_mode", _mode_multi)
+
+
 def _cfg(enabled: bool, rate: int = 3):
     return SimpleNamespace(
         timing=SimpleNamespace(

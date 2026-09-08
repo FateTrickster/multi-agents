@@ -7,7 +7,14 @@ class _FakeRedis:
     def __init__(self):
         self._hashes = {}
         self._sets = {}
+        self._values = {}
         self._deleted = set()
+
+    async def set(self, key, value):
+        self._values[key] = value
+
+    async def sadd(self, key, *members):
+        self._sets.setdefault(key, set()).update(members)
 
     async def scan_iter(self, match=None, count=200):
         _ = count
@@ -80,3 +87,16 @@ async def test_cleanup_stale_online_presence_prunes_stale_and_dangling(monkeypat
     assert fake_redis._hashes[last_seen_key] == {"u_alive": str(now_ts - 10)}
     assert fake_redis._sets[online_users_key] == {"u_alive"}
     assert fake_redis._hashes[conn_counts_key] == {"u_alive": "1"}
+
+
+@pytest.mark.asyncio
+async def test_mark_room_active_records_message_and_activity():
+    fake_redis = _FakeRedis()
+
+    await redis_client_module.mark_room_active("room-1", client=fake_redis, message=True, ts=123.0)
+
+    assert fake_redis._values == {
+        "room:room-1:last_msg_time": 123.0,
+        "room:room-1:last_activity_time": 123.0,
+    }
+    assert fake_redis._sets["active_rooms"] == {"room-1"}

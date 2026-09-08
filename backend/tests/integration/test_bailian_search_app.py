@@ -10,7 +10,8 @@ import pytest
 from dotenv import load_dotenv
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
-SCRATCH_DIR = BACKEND_DIR / ".ai_scratch"
+PROJECT_DIR = BACKEND_DIR.parent
+SCRATCH_DIR = PROJECT_DIR / ".ai_scratch"
 OUT_JSONL = SCRATCH_DIR / "tmp_bailian_search_app_source_probe.jsonl"
 OUT_ANSWER = SCRATCH_DIR / "tmp_bailian_search_app_source_probe_answer.txt"
 OUT_FIELDS = SCRATCH_DIR / "tmp_bailian_search_app_source_fields.json"

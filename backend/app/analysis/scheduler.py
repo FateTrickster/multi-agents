@@ -135,8 +135,8 @@ def _build_time_nudge_text(
     progress_status: str,
     progress_details: str,
 ) -> tuple[str, str]:
-    phase_text = TIME_PROGRESS_PHASE_TEXT.get(phase, "????")
-    progress_text = TIME_PROGRESS_PROGRESS_TEXT.get(progress_status, "??????")
+    phase_text = TIME_PROGRESS_PHASE_TEXT.get(phase, "未知阶段")
+    progress_text = TIME_PROGRESS_PROGRESS_TEXT.get(progress_status, "状态未知")
     reason = TIME_PROGRESS_REASON_TEMPLATE.format(
         elapsed_minutes=elapsed_minutes,
         node_minutes=node_minutes,

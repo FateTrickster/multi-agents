@@ -18,3 +18,15 @@ def test_message_constants_no_common_garbled_glyphs():
     joined = "\n".join(values)
     for marker in garbled_markers:
         assert marker not in joined
+
+
+def test_backend_sources_have_no_encoding_pollution():
+    from pathlib import Path
+
+    app_dir = Path(__file__).parents[2] / "app"
+    for source_path in app_dir.rglob("*"):
+        if source_path.suffix not in {".py", ".txt", ".yaml", ".yml"}:
+            continue
+        content = source_path.read_text(encoding="utf-8-sig")
+        assert "????" not in content, source_path
+        assert "�" not in content, source_path

@@ -71,8 +71,8 @@ def test_get_task_script_endpoint_returns_state(fake_db, monkeypatch):
 
 
 def test_list_rooms_hides_timer_ended_rooms_for_student(fake_db, monkeypatch):
-    room_running = Room(id=uuid.uuid4(), name="R1", created_by=uuid.uuid4(), status=RoomStatus.waiting)
-    room_ended = Room(id=uuid.uuid4(), name="R2", created_by=uuid.uuid4(), status=RoomStatus.waiting)
+    room_running = Room(id=uuid.uuid4(), name="R1", created_by=uuid.uuid4(), status=RoomStatus.waiting, agent_mode="multi")
+    room_ended = Room(id=uuid.uuid4(), name="R2", created_by=uuid.uuid4(), status=RoomStatus.waiting, agent_mode="multi")
     room_ended.timer_stopped_at = datetime.now(timezone.utc)
     client = _build_client(fake_db, _student_user())
 
@@ -94,8 +94,8 @@ def test_list_rooms_hides_timer_ended_rooms_for_student(fake_db, monkeypatch):
 
 
 def test_list_rooms_keeps_timer_ended_rooms_for_teacher(fake_db, monkeypatch):
-    room_running = Room(id=uuid.uuid4(), name="R1", created_by=uuid.uuid4(), status=RoomStatus.waiting)
-    room_ended = Room(id=uuid.uuid4(), name="R2", created_by=uuid.uuid4(), status=RoomStatus.waiting)
+    room_running = Room(id=uuid.uuid4(), name="R1", created_by=uuid.uuid4(), status=RoomStatus.waiting, agent_mode="multi")
+    room_ended = Room(id=uuid.uuid4(), name="R2", created_by=uuid.uuid4(), status=RoomStatus.waiting, agent_mode="multi")
     room_ended.timer_stopped_at = datetime.now(timezone.utc)
     client = _build_client(fake_db, _teacher_user())
 

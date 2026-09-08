@@ -9,7 +9,7 @@ from fastapi import HTTPException
 from app.agents.context_builder import get_recent_messages, get_room_context
 from app.agents.llm_client import stream_completion
 from app.agents.settings import get_agent_settings
-from app.db.redis_client import get_redis_client
+from app.db.redis_client import get_redis_client, mark_room_active
 from app.models.room import Room
 from app.models.user import User
 from app.services import room_service, task_service
@@ -111,12 +111,9 @@ async def _broadcast_task_script_updated(room_id: str, reason: str) -> None:
 
 async def _touch_room_activity(room_id: str) -> None:
     try:
-        redis_client = get_redis_client()
+        await mark_room_active(room_id, client=get_redis_client())
     except Exception:
         return
-    now_ts = datetime.now(timezone.utc).timestamp()
-    await redis_client.set(f"room:{room_id}:last_activity_time", now_ts)
-    await redis_client.sadd("active_rooms", room_id)
 
 
 async def _get_lock_raw(room_id: str) -> dict | None:

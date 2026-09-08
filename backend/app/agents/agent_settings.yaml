@@ -4,7 +4,6 @@ timing:
   analysis_interval_minutes: 5
   warmup_minutes: 3
   agent_cooldown_seconds: 5
-  global_intervention_limit_per_hour: 6
   room_auto_intervention_cooldown_seconds: 180
   rule_trigger_marker_ttl_seconds: 180
   agent_response_timeout_seconds: 90
@@ -12,8 +11,6 @@ timing:
   mention_entry_enabled: true
   mention_entry_rate_per_sec: 3
   mention_entry_queue_max_wait_sec: 60
-  room_role_manual_mention_cooldown_sec: 30
-  mention_entry_queue_max_size: 2000
   time_progress_jitter_enabled: true
   time_progress_jitter_min_seconds: 30
   time_progress_jitter_max_seconds: 90
@@ -38,29 +35,11 @@ timing:
   emotional_support_cooldown_seconds: 180
 
 thresholds:
-  diversity_score_threshold: 0.3
-  balance_score_threshold: 0.4
   monopoly_message_count: 5
 
 models:
-  cognitive_engagement_analyst:
-    model_version: "claude-3-5-haiku-20241022"
-    history_token_budget: 8000
-  behavioral_engagement_analyst:
-    model_version: "claude-3-5-haiku-20241022"
-    history_token_budget: 8000
-  emotional_engagement_analyst:
-    model_version: "claude-3-5-haiku-20241022"
-    history_token_budget: 8000
-  social_engagement_analyst:
-    model_version: "claude-3-5-haiku-20241022"
-    history_token_budget: 8000
-  chief_dispatcher:
-    model_version: "claude-3-5-sonnet-20241022"
-    history_token_budget: 4000
   role_agents:
     model_version: ""
-    history_token_budget: 6000
 
 mention:
   enabled: true

@@ -29,6 +29,9 @@ dist/
 # AI Agent 临时沙箱
 .ai_scratch/
 
+# CodeGraph
+.codegraph/
+
 frontend/test-results/
 
 deploy.ps1

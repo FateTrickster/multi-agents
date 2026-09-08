@@ -5,6 +5,14 @@ import pytest
 from app.analysis import scheduler
 
 
+@pytest.fixture(autouse=True)
+def _use_multi_agent_mode(monkeypatch):
+    async def _mode_multi(_room_id):
+        return "multi"
+
+    monkeypatch.setattr(scheduler, "get_room_agent_mode", _mode_multi)
+
+
 class _FakeRedis:
     def __init__(self, active_rooms, values=None):
         self._active_rooms = active_rooms

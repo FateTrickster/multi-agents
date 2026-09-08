@@ -283,7 +283,11 @@ async def test_multi_mode_worker_does_not_skip_valid_multi_agent_tasks(monkeypat
     async def _fake_room_context(_room_id):
         return {}
 
+    async def _fake_recent_messages(_room_id):
+        return []
+
     monkeypatch.setattr(agent_worker, "get_room_context", _fake_room_context)
+    monkeypatch.setattr(agent_worker, "get_recent_messages", _fake_recent_messages)
 
     worker = agent_worker.AgentWorker()
     room_id = str(uuid.uuid4())

@@ -5,6 +5,14 @@ import pytest
 from app.agents.committee import BasicCommittee
 
 
+@pytest.fixture(autouse=True)
+def _use_multi_agent_mode(monkeypatch):
+    async def _mode_multi(_room_id):
+        return "multi"
+
+    monkeypatch.setattr("app.agents.committee.get_room_agent_mode", _mode_multi)
+
+
 class _FakeRedis:
     def __init__(self):
         self.published = []

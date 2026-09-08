@@ -26,7 +26,7 @@ from app.agents.queue import queue_key
 from app.agents.role_agents import ROLE_AGENTS
 from app.agents.settings import get_agent_settings
 from app.analysis.triggers import trigger_detector
-from app.db.redis_client import get_redis_client, touch_online_presence
+from app.db.redis_client import get_redis_client, mark_room_active, touch_online_presence
 from app.db.redis_client import get_user_active_session_jti
 from app.db.session import AsyncSessionLocal
 from app.models.room_member import RoomMember
@@ -448,7 +448,7 @@ async def handle_chat_message(
                     "type": "agent:mention_blocked",
                     "reason": "agent_cooling",
                     "agent_role": cooling_role,
-                    "message": f"???????????? {remaining_seconds} ?????",
+                    "message": f"该智能体正在冷却中，请在 {remaining_seconds} 秒后重试。",
                 }
             )
         return
@@ -460,7 +460,7 @@ async def handle_chat_message(
                 {
                     "type": "agent:mention_blocked",
                     "reason": "agent_busy",
-                    "message": "?????????????????? @ ???",
+                    "message": "智能体正在处理其他请求，请稍后再 @ 智能体。",
                 }
             )
         return
@@ -512,10 +512,8 @@ async def handle_chat_message(
                 session_jti=session_jti,
                 extra={"loadmsg_id": loadmsg_id},
             )
-            await redis_client.set(f"room:{room_id}:last_msg_time", now_ts)
-            await redis_client.set(f"room:{room_id}:last_activity_time", now_ts)
+            await mark_room_active(room_id, client=redis_client, message=True, ts=now_ts)
             await redis_client.setnx(f"room:{room_id}:start_time", now_ts)
-            await redis_client.sadd("active_rooms", room_id)
             log_ws_debug(
                 "redis_room_activity_update_done",
                 room_id,

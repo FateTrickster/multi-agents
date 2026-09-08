@@ -42,6 +42,21 @@ async def touch_online_presence(room_id: str, user_id: str, ts: float | None = N
     await client.hset(f"room:{room_id}:online_user_last_seen", user_id, str(now_ts))
 
 
+async def mark_room_active(
+    room_id: str,
+    *,
+    client: redis.Redis | None = None,
+    message: bool = False,
+    ts: float | None = None,
+) -> None:
+    client = client or get_redis_client()
+    now_ts = ts if ts is not None else time.time()
+    if message:
+        await client.set(f"room:{room_id}:last_msg_time", now_ts)
+    await client.set(f"room:{room_id}:last_activity_time", now_ts)
+    await client.sadd("active_rooms", room_id)
+
+
 async def cleanup_stale_online_presence(stale_seconds: int = 120) -> None:
     """
     Remove stale online users by last-seen heartbeat.

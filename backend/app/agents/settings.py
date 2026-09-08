@@ -18,7 +18,6 @@ class TimingConfig(BaseModel):
     analysis_interval_minutes: int = 5
     warmup_minutes: int = 3
     agent_cooldown_seconds: int = 5
-    global_intervention_limit_per_hour: int = 12
     room_auto_intervention_cooldown_seconds: int = 180
     rule_trigger_marker_ttl_seconds: int = 180
     agent_response_timeout_seconds: int = 90
@@ -26,8 +25,6 @@ class TimingConfig(BaseModel):
     mention_entry_enabled: bool = False
     mention_entry_rate_per_sec: int = 3
     mention_entry_queue_max_wait_sec: int = 60
-    room_role_manual_mention_cooldown_sec: int = 30
-    mention_entry_queue_max_size: int = 2000
     time_progress_jitter_enabled: bool = True
     time_progress_jitter_min_seconds: int = 30
     time_progress_jitter_max_seconds: int = 90
@@ -56,8 +53,6 @@ class TimingConfig(BaseModel):
 
 
 class ThresholdsConfig(BaseModel):
-    diversity_score_threshold: float = 0.3
-    balance_score_threshold: float = 0.4
     monopoly_message_count: int = 5
 
 
@@ -86,15 +81,9 @@ class BailianSearchAppConfig(BaseModel):
 
 class ModelConfigItem(BaseModel):
     model_version: str = settings.AGENT_MODEL
-    history_token_budget: int = 4000
 
 
 class ModelsConfig(BaseModel):
-    cognitive_engagement_analyst: ModelConfigItem = Field(default_factory=ModelConfigItem)
-    behavioral_engagement_analyst: ModelConfigItem = Field(default_factory=ModelConfigItem)
-    emotional_engagement_analyst: ModelConfigItem = Field(default_factory=ModelConfigItem)
-    social_engagement_analyst: ModelConfigItem = Field(default_factory=ModelConfigItem)
-    chief_dispatcher: ModelConfigItem = Field(default_factory=ModelConfigItem)
     role_agents: ModelConfigItem = Field(default_factory=ModelConfigItem)
 
 

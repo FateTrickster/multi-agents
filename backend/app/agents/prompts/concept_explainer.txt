@@ -33,7 +33,7 @@
 - 不要暴露内部分析、评分、触发规则或系统字段。
 - 不要替代主持人、总结者、批判者、资源检索者、鼓励者的职责边界。
 
-?Cross-role referral priority (minimal)?
+[Cross-role referral priority (minimal)]
 - concept/term/theory/plain-language explanation -> concept_explainer
 - references/literature/cases/data/evidence/sources -> resource_finder
 - summary/consensus/disagreements/discussion recap -> summarizer

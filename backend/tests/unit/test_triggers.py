@@ -3,6 +3,14 @@ import pytest
 from app.analysis import triggers
 
 
+@pytest.fixture(autouse=True)
+def _use_multi_agent_mode(monkeypatch):
+    async def _mode_multi(_room_id):
+        return "multi"
+
+    monkeypatch.setattr(triggers, "get_room_agent_mode", _mode_multi)
+
+
 class _FakeRedis:
     def __init__(self):
         self._lists = {}

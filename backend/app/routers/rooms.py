@@ -1,14 +1,13 @@
 from typing import Optional
 from uuid import UUID
 import json
-import time
 import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.redis_client import get_redis_client
+from app.db.redis_client import get_redis_client, mark_room_active
 from app.db.session import get_db
 from app.dependencies import get_current_user, require_teacher
 from app.exceptions import RoomMemberForbiddenError, RoomNotFoundError
@@ -49,12 +48,9 @@ async def _ensure_room_member(db: AsyncSession, room_id: UUID, user_id: UUID) ->
 
 async def _touch_room_activity(room_id: str) -> None:
     try:
-        redis_client = get_redis_client()
+        await mark_room_active(room_id, client=get_redis_client())
     except RuntimeError:
         return
-    now_ts = time.time()
-    await redis_client.set(f"room:{room_id}:last_activity_time", now_ts)
-    await redis_client.sadd("active_rooms", room_id)
 
 
 async def _publish_room_timer_update(room) -> None:

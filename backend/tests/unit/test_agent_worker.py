@@ -5,6 +5,14 @@ import pytest
 from app.agents import agent_worker
 
 
+@pytest.fixture(autouse=True)
+def _use_multi_agent_mode(monkeypatch):
+    async def _mode_multi(_room_id):
+        return "multi"
+
+    monkeypatch.setattr(agent_worker, "get_room_agent_mode", _mode_multi)
+
+
 class _FakeRedis:
     def __init__(self):
         self.keys = set()
@@ -448,7 +456,7 @@ async def test_worker_global_concurrency_limit_one_requeues_extra_task(monkeypat
     task1 = asyncio.create_task(
         worker._execute_task("r8", {"agent_role": "resource_finder", "trigger_type": "mention", "task_id": "t1"})
     )
-    await started_event.wait()
+    await asyncio.wait_for(started_event.wait(), timeout=1)
     await worker._execute_task("r9", {"agent_role": "resource_finder", "trigger_type": "mention", "task_id": "t2"})
     release_event.set()
     await task1

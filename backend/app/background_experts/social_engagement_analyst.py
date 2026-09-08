@@ -100,7 +100,3 @@ class SocialCPSAnalyst:
             **cps_report,
         }
 
-
-# backward compatibility alias
-SocialEngagementAnalyst = SocialCPSAnalyst
-

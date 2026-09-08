@@ -1,21 +1,29 @@
-import axios from 'axios'
 import router from '../router/index.js'
 import { useAuthStore } from '../stores/auth.js'
 
-const api = axios.create({ baseURL: '/api' })
 let sessionRevokedHandled = false
 
-api.interceptors.request.use((config) => {
+async function request(method, path, { data, params } = {}) {
   const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+  const query = new URLSearchParams(params || {}).toString()
+  const response = await fetch(`/api${path}${query ? `?${query}` : ''}`, {
+    method,
+    headers: {
+      ...(data === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    ...(data === undefined ? {} : { body: JSON.stringify(data) }),
+  })
+  const contentType = response.headers.get('content-type') || ''
+  const responseData = response.status === 204
+    ? null
+    : contentType.includes('application/json')
+      ? await response.json()
+      : await response.text()
 
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    if (error.response?.status === 401) {
-      const code = error.response?.data?.detail?.code
+  if (!response.ok) {
+    if (response.status === 401) {
+      const code = responseData?.detail?.code
       if (code === 'SESSION_REVOKED' && !sessionRevokedHandled) {
         sessionRevokedHandled = true
         try {
@@ -32,8 +40,20 @@ api.interceptors.response.use(
       }
       router.push('/login')
     }
-    return Promise.reject(error)
+
+    const error = new Error(`Request failed with status ${response.status}`)
+    error.response = { status: response.status, data: responseData }
+    throw error
   }
-)
+
+  return responseData
+}
+
+const api = {
+  get: (path, options) => request('GET', path, options),
+  post: (path, data) => request('POST', path, { data }),
+  patch: (path, data) => request('PATCH', path, { data }),
+  delete: (path, options) => request('DELETE', path, options),
+}
 
 export default api
