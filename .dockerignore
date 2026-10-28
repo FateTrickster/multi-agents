@@ -1,0 +1,17 @@
+.git
+.ai_scratch
+.codegraph
+backend/.venv
+backend/.env
+backend/.pytest_cache
+backend/**/__pycache__
+frontend/node_modules
+frontend/dist
+frontend/test-results
+datas
+HTML
+*.tar.gz
+*.dump
+*.rdb
+*.sql
+*.log

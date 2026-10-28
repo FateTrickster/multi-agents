@@ -1,3 +1,56 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  font-family: "Inter", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-synthesis: none;
+  color: #17243d;
+  background: #f4f7fd;
+}
+html { scroll-behavior: smooth; }
+body { min-width: 320px; }
+button, input, select, textarea { font: inherit; }
+button:not(:disabled) { cursor: pointer; }
+button, input, select, textarea { transition: border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
+:where(button, input, select, textarea, a):focus-visible { outline: 3px solid #818cf8; outline-offset: 3px; }
+.v2-auth, .v2-lobby {
+  background: radial-gradient(ellipse 80% 45% at 85% -10%, #e0e7ff 0%, transparent 80%), #f4f7fd;
+}
+.v2-auth { position: relative; isolation: isolate; }
+.v2-auth::before { content: ""; position: absolute; z-index: -1; width: 320px; height: 320px; left: max(-130px, calc(50% - 690px)); bottom: 0; border-radius: 999px; background: #dcfce7; filter: blur(85px); opacity: .7; }
+.v2-auth-card { background: rgba(255,255,255,.97); border: 1px solid #e4e9f4; border-radius: 24px; box-shadow: 0 22px 80px rgba(45,62,121,.11),0 4px 18px rgba(39,53,97,.04); }
+.v2-auth-card::before { content: "LEARNING · TOGETHER"; display: block; margin: 0 auto 22px; color: #4f46e5; width: fit-content; padding: 7px 13px; font-size: 10px; font-weight: 800; letter-spacing: .19em; border-radius: 999px; background: #eef2ff; }
+.v2-auth-card h1 { color: #182440; letter-spacing: -.035em; }
+.v2-auth-card input, .v2-auth-card select { min-height: 44px; border-color: #d7def0; background: #fbfcff; }
+.v2-auth-card input:focus, .v2-auth-card select:focus { background: #fff; border-color: #6366f1; }
+.v2-auth-card button[type="submit"] { min-height: 46px; font-weight: 650; background: #4f46e5; box-shadow: 0 7px 20px rgba(79,70,229,.18); }
+.v2-auth-card button[type="submit"]:hover { background: #4338ca; }
+.v2-lobby-header { border-bottom: 1px solid #e6eafa; box-shadow: 0 2px 12px rgba(40,53,88,.025); }
+.v2-lobby-header h1 { letter-spacing: -.025em; color: #202c49; }
+.v2-lobby-main > div { margin-bottom: 18px; }
+.v2-lobby-main > div.rounded-xl, .v2-lobby-main > div.grid > div.rounded-xl { border: 1px solid #e4e9f4; border-radius: 17px; box-shadow: 0 8px 28px rgba(43,61,98,.045); }
+.v2-lobby-main button { min-height: 40px; border-radius: 10px; font-weight: 550; }
+.v2-lobby-main button.bg-blue-600 { background: #4f46e5; }
+.v2-lobby-main button.bg-blue-600:hover { background: #4338ca; }
+.v2-lobby-main input, .v2-lobby-main select { border-color: #d7def0; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+/* V2 collaboration room — calm, task-focused three-panel workspace */
+.v2-room { background: #f3f6fd; }
+.v2-room-topbar { border-color: #dfe6f2; box-shadow: 0 2px 14px rgba(35, 52, 92, .045); }
+.v2-room-topbar button { min-height: 36px; }
+.v2-room-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.02fr) minmax(290px, .78fr); gap: 12px; flex: 1; min-height: 0; padding: 12px; }
+.v2-room-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; gap: 12px; }
+.v2-room-card { min-width: 0; min-height: 0; overflow: hidden; border: 1px solid #e1e7f2 !important; border-radius: 16px !important; background: #fff; box-shadow: 0 6px 24px rgba(48, 63, 105, .045); }
+.v2-room-card > div:first-child > p:first-child, .v2-room-card > div:first-child > span:first-child { letter-spacing: .06em; }
+.v2-room-writing .writing-editor { border-color: #e4e9f3; border-radius: 11px; background: #fdfdff; line-height: 1.8; }
+.v2-room-writing .writing-editor:focus { border-color: #6366f1; box-shadow: 0 0 0 3px #e0e7ff; }
+.v2-room-writing button, .v2-room-chat button, .v2-room-task button { transition: background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.v2-room-writing .flex-wrap.items-center.gap-1 { border-radius: 10px; background: #f8faff; border-color: #e6eaf3; }
+.v2-room-chat > div:first-child { border-color: #e8ecf4; }
+.v2-room-chat > div:first-child p { color: #273654; letter-spacing: .06em; }
+.v2-room-task > div { min-height: 0; }
+@media (max-width: 1250px) {
+ .v2-room-grid { grid-template-columns: minmax(0,1.1fr) minmax(0,1fr) minmax(250px,.8fr); gap: 9px; padding: 9px; }
+}

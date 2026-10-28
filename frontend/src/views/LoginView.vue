@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-100 flex items-center justify-center">
-    <div class="bg-white rounded-xl shadow-md w-full max-w-md p-8">
-      <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">多智能体协作学习平台</h1>
+  <div class="v2-auth min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="v2-auth-card w-full max-w-md p-8 sm:p-10">
+      <h1 class="text-2xl font-bold text-center mb-6 text-gray-800">协作学习工作台</h1>
 
       <!-- Tab 切换 -->
       <div class="flex border-b mb-6">

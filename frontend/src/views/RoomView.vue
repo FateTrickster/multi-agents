@@ -1,6 +1,6 @@
 <template>
-  <div class="relative flex h-screen overflow-hidden bg-gray-50 pt-14">
-    <div class="fixed top-0 left-0 right-0 z-40 h-14 border-b border-gray-200 bg-white px-4">
+  <div class="v2-room relative flex h-screen flex-col overflow-hidden bg-gray-50 pt-14">
+    <div class="v2-room-topbar fixed top-0 left-0 right-0 z-40 h-14 border-b border-gray-200 bg-white px-4">
       <div class="h-full flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="text-xs text-gray-500">{{ textTimerTitle }}</p>
@@ -28,17 +28,16 @@
       </div>
     </div>
 
-    <div class="w-[35%] flex flex-col gap-2 p-2 border-r border-gray-200">
-      <WritingArea class="flex-1" />
-    </div>
-
-    <div class="w-[35%] flex flex-col border-r border-gray-200">
-      <ChatPanel class="flex-1" />
-    </div>
-
-    <div class="w-[30%] min-h-0 flex flex-col gap-2 p-2">
+<main class="v2-room-grid">
+      <section class="v2-room-col v2-room-writing" aria-label="共享写作区">
+        <WritingArea class="v2-room-card flex-1" />
+      </section>
+      <section class="v2-room-col v2-room-chat" aria-label="小组讨论区">
+        <ChatPanel class="v2-room-card flex-1" />
+      </section>
+      <aside class="v2-room-col v2-room-task">
       <TaskRequirements
-        class="flex-1 min-h-0"
+        class="v2-room-card flex-1 min-h-0"
         :task="roomStore.currentTask"
         :loading="roomStore.loadingContext"
         :error="roomStore.contextError"
@@ -50,7 +49,7 @@
       />
       <TaskScript
         v-if="showMultiAgentTaskFlow"
-        class="flex-1 min-h-0"
+        class="v2-room-card flex-1 min-h-0"
         :state="roomStore.taskScriptState"
         :loading="roomStore.loadingTaskScript"
         :error="roomStore.taskScriptError"
@@ -68,7 +67,8 @@
         @acquire-lock="acquireTaskScriptLock"
         @release-lock="releaseTaskScriptLock"
       />
-    </div>
+    </aside>
+    </main>
   </div>
 </template>
 

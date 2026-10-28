@@ -1,6 +1,6 @@
-﻿<template>
-  <div class="min-h-screen bg-gray-100">
-    <header class="flex items-center justify-between bg-white px-6 py-4 shadow-sm">
+<template>
+  <div class="v2-lobby min-h-screen">
+    <header class="v2-lobby-header flex flex-wrap items-center justify-between gap-3 bg-white px-6 py-4">
       <h1 class="text-lg font-bold text-gray-800">{{ TXT.lobbyTitle }}</h1>
       <div class="flex items-center gap-4">
         <span class="text-sm text-gray-600">
@@ -10,7 +10,7 @@
       </div>
     </header>
 
-    <main class="mx-auto max-w-5xl px-6 py-8">
+    <main class="v2-lobby-main mx-auto max-w-5xl px-4 py-8 sm:px-6">
       <div v-if="authStore.isTeacher" class="mb-6 flex flex-wrap justify-end gap-3">
         <button class="rounded-lg border border-blue-200 bg-white px-4 py-2 text-blue-700 hover:bg-blue-50" @click="openTemplateModal">
           + {{ TXT.createTemplate }}

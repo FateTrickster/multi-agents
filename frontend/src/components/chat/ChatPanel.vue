@@ -1,8 +1,8 @@
-﻿<template>
+<template>
   <div class="flex h-full flex-col border border-gray-200 bg-white">
     <div class="flex items-center justify-between border-b border-gray-100 p-3">
-      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">Realtime Chat Room</p>
-      <span class="text-xs text-gray-500">Online {{ onlineCount }}</span>
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">小组实时讨论</p>
+      <span class="text-xs text-gray-500">{{ onlineCount }} 人在线</span>
     </div>
 
     <div v-if="!connected" class="bg-yellow-100 py-1 text-center text-xs text-yellow-700">

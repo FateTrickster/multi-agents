@@ -325,6 +325,7 @@ async def _stream_openai(
         messages=req_messages,
         max_tokens=max_tokens,
         stream=True,
+        **({'extra_body': {'thinking': {'type': 'disabled'}}} if model == 'deepseek-flash' else {}),
     )
 
     async for chunk in stream:
