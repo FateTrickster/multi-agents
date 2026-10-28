@@ -9,6 +9,7 @@ class _FakeRedis:
         self._h = {}
         self._exp = {}
         self._pub = []
+        self._l = {}
 
     async def zadd(self, key, mapping):
         bucket = self._z.setdefault(key, {})
@@ -31,6 +32,9 @@ class _FakeRedis:
 
     async def zcard(self, key):
         return len(self._z.get(key, {}))
+
+    async def rpush(self, key, value):
+        self._l.setdefault(key, []).append(value)
 
     async def hset(self, key, mapping):
         bucket = self._h.setdefault(key, {})
@@ -94,7 +98,7 @@ async def test_enqueue_writes_queued_task_status(monkeypatch):
     assert status.get("room_id") == "room-status"
     assert status.get("agent_role") == "facilitator"
     assert status.get("source_message_id") == "msg-1"
-    assert fake_redis._exp.get(key) == agent_queue.TASK_STATUS_TTL_SECONDS
+    assert key not in fake_redis._exp  # Audit records must remain exportable
 
 
 @pytest.mark.asyncio
@@ -149,8 +153,8 @@ async def test_create_mention_entry_writes_hash_status_and_queue(monkeypatch):
     assert status["status"] == "queued"
     assert status["entry_id"] == "entry-1"
     assert fake_redis._z[agent_queue.MENTION_ENTRY_QUEUE_KEY]["entry-1"] == 100.0
-    assert fake_redis._exp[agent_queue.mention_entry_key("entry-1")] == agent_queue.MENTION_ENTRY_TTL_SECONDS
-    assert fake_redis._exp[agent_queue.mention_entry_status_key("entry-1")] == agent_queue.MENTION_ENTRY_TTL_SECONDS
+    assert agent_queue.mention_entry_key("entry-1") not in fake_redis._exp
+    assert agent_queue.mention_entry_status_key("entry-1") not in fake_redis._exp
 
 
 @pytest.mark.asyncio

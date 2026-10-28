@@ -1,4 +1,4 @@
-﻿from types import SimpleNamespace
+from types import SimpleNamespace
 
 import pytest
 
@@ -17,8 +17,12 @@ class _FakeRedisQueue:
         self.hset_calls = []
         self.expire_calls = []
         self.publish_calls = []
+        self.list_pushes = []
         self.values = {}
         self.zsets = {}
+
+    async def rpush(self, key, value):
+        self.list_pushes.append((key, value))
 
     async def zadd(self, key, mapping):
         self.zadd_calls.append((key, mapping))

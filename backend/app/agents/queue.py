@@ -433,17 +433,22 @@ async def set_task_status(
         "status": status,
         "reason": reason or "",
         "source_message_id": source_message_id or "",
-        "running_at": running_at or "",
-        "finished_at": finished_at or "",
-        "error": error or "",
-        "drop_reason": drop_reason or "",
+        # Preserve prior phase timestamps and errors across later status transitions.
+        **({"running_at": running_at} if running_at is not None else {}),
+        **({"finished_at": finished_at} if finished_at is not None else {}),
+        **({"error": error} if error is not None else {}),
+        **({"drop_reason": drop_reason} if drop_reason is not None else {}),
     }
     if created_at is not None:
         payload["created_at"] = created_at
     if queued_at is not None:
         payload["queued_at"] = queued_at
     await redis_client.hset(key, mapping=payload)
-    await redis_client.expire(key, TASK_STATUS_TTL_SECONDS)
+    await redis_client.rpush(
+        f"agent:task_events:{room_id}",
+        json.dumps({"at": now_iso(), **payload}, ensure_ascii=False),
+    )
+    # Task audit records are research evidence and must not expire.
 
 
 async def update_task_status_fields(task_id: str, **fields: str) -> None:
@@ -452,7 +457,13 @@ async def update_task_status_fields(task_id: str, **fields: str) -> None:
     redis_client = get_redis_client()
     key = task_status_key(task_id)
     await redis_client.hset(key, mapping={k: str(v) for k, v in fields.items()})
-    await redis_client.expire(key, TASK_STATUS_TTL_SECONDS)
+    old = await redis_client.hgetall(key)
+    if old.get("room_id"):
+        await redis_client.rpush(
+            f"agent:task_events:{old['room_id']}",
+            json.dumps({"at": now_iso(), "task_id": task_id, **fields}, ensure_ascii=False),
+        )
+    # Preserve subsequent status updates for longitudinal export.
 
 
 async def get_task_status(task_id: str) -> dict[str, str]:
@@ -496,7 +507,7 @@ async def create_mention_entry(
     ekey = mention_entry_key(eid)
     skey = mention_entry_status_key(eid)
     await redis_client.hset(ekey, mapping=entry)
-    await redis_client.expire(ekey, MENTION_ENTRY_TTL_SECONDS)
+    # Keep mention request/status history for research export.
     await redis_client.hset(
         skey,
         mapping={
@@ -508,7 +519,7 @@ async def create_mention_entry(
             "updated_at": now_iso(),
         },
     )
-    await redis_client.expire(skey, MENTION_ENTRY_TTL_SECONDS)
+    # Keep mention request/status history for research export.
     await redis_client.zadd(MENTION_ENTRY_QUEUE_KEY, {eid: now_ts})
     return entry
 
@@ -566,7 +577,7 @@ async def mark_mention_entry_status(
     }
     skey = mention_entry_status_key(entry_id)
     await redis_client.hset(skey, mapping=payload)
-    await redis_client.expire(skey, MENTION_ENTRY_TTL_SECONDS)
+    # Keep mention request/status history for research export.
 
 
 async def remove_mention_entry_from_queue(entry_id: str) -> None:

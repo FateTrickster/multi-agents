@@ -30,6 +30,7 @@ from app.models.message import Message, SenderType
 from app.models.room import Room
 from app.models.task import Task
 from app.services import writing_submit_service
+from app.services.writing_snapshot_service import snapshot_active_writing_docs
 
 scheduler = AsyncIOScheduler()
 TIME_NODE_MINUTES = (20, 45, 70, 95, 115)
@@ -698,6 +699,7 @@ def start_scheduler() -> None:
 
     cfg = get_agent_settings()
     scheduler.add_job(check_silence, "interval", seconds=30, id="check_silence", replace_existing=True)
+    scheduler.add_job(snapshot_active_writing_docs, 'interval', seconds=30, id='writing_snapshots_5min', replace_existing=True, max_instances=1)
     scheduler.add_job(
         check_time_progress_reminders,
         "interval",

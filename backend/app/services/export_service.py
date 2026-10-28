@@ -16,8 +16,11 @@ from app.db.redis_client import get_redis_client
 from app.models.analysis import AnalysisSnapshot
 from app.models.message import Message, SenderType
 from app.models.room import Room
+from app.models.task import Task
+from app.models.room_task_script import RoomTaskScript
 from app.models.room_member import RoomMember
 from app.models.user import User
+from app.services.writing_snapshot_service import get_writing_snapshots
 
 
 @dataclass
@@ -26,9 +29,15 @@ class ExportInclude:
     room_members: bool = True
     messages: bool = True
     agent_tasks: bool = True
+    agent_mention_requests: bool = True
+    agent_task_events: bool = True
     analysis_snapshots: bool = True
     writing_docs: bool = True
     writing_change_logs: bool = True
+    writing_snapshots: bool = True
+    task_definitions: bool = True
+    task_flow_states: bool = True
+    writing_submission_states: bool = True
     room_writing_html: bool = True
 
 
@@ -75,11 +84,16 @@ async def _matched_room_ids(
     room_name_prefix: str | None,
     start_time: datetime | None,
     end_time: datetime | None,
+    room_ids: list[str] | None = None,
 ) -> list[str]:
     start_time = _normalize_dt(start_time)
     end_time = _normalize_dt(end_time)
 
     stmt = select(Room.id).order_by(Room.created_at.asc())
+    if room_ids is not None:
+        if not room_ids:
+            return []
+        stmt = stmt.where(Room.id.in_([UUID(rid) for rid in room_ids]))
     if room_id:
         stmt = stmt.where(Room.id == UUID(room_id))
     if room_name_prefix:
@@ -175,18 +189,25 @@ async def build_export_payload(
     start_time: datetime | None = None,
     end_time: datetime | None = None,
     include: ExportInclude | None = None,
+    room_ids: list[str] | None = None,
 ) -> dict[str, Any]:
     include = include or ExportInclude()
-    room_ids = await _matched_room_ids(db, room_id, room_name_prefix, start_time, end_time)
+    room_ids = await _matched_room_ids(db, room_id, room_name_prefix, start_time, end_time, room_ids)
     room_uuids = [UUID(rid) for rid in room_ids]
 
     rooms: list[dict[str, Any]] = []
     room_members: list[dict[str, Any]] = []
     messages: list[dict[str, Any]] = []
     agent_tasks: list[dict[str, Any]] = []
+    agent_mention_requests: list[dict[str, Any]] = []
+    agent_task_events: list[dict[str, Any]] = []
     analysis_snapshots: list[dict[str, Any]] = []
     writing_docs: list[dict[str, Any]] = []
     writing_change_logs: list[dict[str, Any]] = []
+    writing_snapshots: list[dict[str, Any]] = []
+    task_definitions: list[dict[str, Any]] = []
+    task_flow_states: list[dict[str, Any]] = []
+    writing_submission_states: list[dict[str, Any]] = []
     room_writing_html: dict[str, str] = {}
 
     if room_ids and include.rooms:
@@ -203,6 +224,7 @@ async def build_export_payload(
                 Room.timer_deadline_at,
                 Room.timer_stopped_at,
                 Room.locked_member_ids,
+                Room.agent_mode,
             )
             .where(Room.id.in_(room_uuids))
             .order_by(Room.created_at.asc())
@@ -221,8 +243,36 @@ async def build_export_payload(
                     "timer_deadline_at": _iso(row["timer_deadline_at"]),
                     "timer_stopped_at": _iso(row["timer_stopped_at"]),
                     "locked_member_ids": row["locked_member_ids"],
+                    "agent_mode": row["agent_mode"],
                 }
             )
+
+    if room_ids and include.task_definitions:
+        stmt = (
+            select(Task.id, Task.title, Task.requirements, Task.scripts,
+                   Task.discussion_template, Task.created_by)
+            .join(Room, Room.task_id == Task.id)
+            .where(Room.id.in_(room_uuids))
+            .distinct()
+        )
+        for row in (await db.execute(stmt)).mappings().all():
+            task_definitions.append({
+                "task_id": str(row["id"]), "title": row["title"],
+                "requirements": row["requirements"], "scripts": row["scripts"],
+                "discussion_template": row["discussion_template"],
+                "created_by": str(row["created_by"]),
+            })
+
+    if room_ids and include.task_flow_states:
+        stmt = select(RoomTaskScript).where(RoomTaskScript.room_id.in_(room_uuids))
+        for item in (await db.execute(stmt)).scalars().all():
+            task_flow_states.append({
+                "room_id": str(item.room_id),
+                "task_id": str(item.task_id) if item.task_id else "",
+                "scripts": item.scripts,
+                "created_at": _iso(item.created_at),
+                "updated_at": _iso(item.updated_at),
+            })
 
     if room_ids and include.room_members:
         stmt = (
@@ -335,11 +385,12 @@ async def build_export_payload(
                 }
             )
 
-    redis_client = None
-    try:
-        redis_client = get_redis_client()
-    except RuntimeError:
-        redis_client = None
+    needs_redis = bool(room_ids and (
+        include.agent_tasks or include.agent_mention_requests or include.agent_task_events or include.writing_docs or include.writing_change_logs
+        or include.room_writing_html or include.writing_snapshots
+        or include.writing_submission_states
+    ))
+    redis_client = get_redis_client() if needs_redis else None
 
     if room_ids and redis_client is not None:
         if include.agent_tasks:
@@ -368,7 +419,41 @@ async def build_export_payload(
                     }
                 )
 
-        if include.writing_docs or include.writing_change_logs or include.room_writing_html:
+        if include.agent_task_events:
+            for rid in room_ids:
+                for raw in await redis_client.lrange(f"agent:task_events:{rid}", 0, -1):
+                    try:
+                        event = json.loads(raw)
+                    except (ValueError, TypeError):
+                        continue
+                    if isinstance(event, dict):
+                        agent_task_events.append({"room_id": rid, **event})
+
+        if include.agent_mention_requests:
+            room_set = set(room_ids)
+            async for key in redis_client.scan_iter(match="agent:mention_entry:*", count=1000):
+                entry = await redis_client.hgetall(key)
+                if not entry or entry.get("room_id") not in room_set:
+                    continue
+                status = await redis_client.hgetall(f"agent:mention_entry_status:{entry.get('entry_id')}")
+                agent_mention_requests.append({
+                    "room_id": entry.get("room_id"),
+                    "entry_id": entry.get("entry_id"),
+                    "agent_role": entry.get("agent_role"),
+                    "source_message_id": entry.get("source_message_id"),
+                    "student_name": entry.get("student_name"),
+                    "reason": entry.get("reason"),
+                    "strategy": entry.get("strategy"),
+                    "trigger_type": entry.get("trigger_type"),
+                    "created_at": entry.get("created_at"),
+                    "status": status.get("status"),
+                    "status_reason": status.get("reason"),
+                    "task_id": status.get("task_id"),
+                    "error": status.get("error"),
+                    "updated_at": status.get("updated_at"),
+                })
+
+        if include.writing_docs or include.writing_change_logs or include.room_writing_html or include.writing_snapshots or include.writing_submission_states:
             for rid in room_ids:
                 state_raw = await redis_client.get(f"room:{rid}:writing_doc_state")
                 if state_raw:
@@ -393,8 +478,23 @@ async def build_export_payload(
                     if include.room_writing_html:
                         room_writing_html[rid] = content
 
+                if include.writing_submission_states:
+                    submission_raw = await redis_client.get(f"room:{rid}:writing_submit_state")
+                    if submission_raw:
+                        try:
+                            submission = json.loads(submission_raw)
+                        except (ValueError, TypeError):
+                            submission = {"raw": submission_raw}
+                        writing_submission_states.append({
+                            "room_id": rid,
+                            "required_confirmations": submission.get("required_confirmations"),
+                            "confirmations": submission.get("confirmations"),
+                            "final_submitted_at": submission.get("final_submitted_at"),
+                        })
+                if include.writing_snapshots:
+                    writing_snapshots.extend(await get_writing_snapshots(rid))
                 if include.writing_change_logs:
-                    log_items = await redis_client.lrange(f"room:{rid}:writing_doc_change_log", 0, 999)
+                    log_items = await redis_client.lrange(f"room:{rid}:writing_doc_change_log", 0, -1)
                     for raw in log_items:
                         try:
                             item = json.loads(raw)
@@ -422,10 +522,22 @@ async def build_export_payload(
         files.append("messages.csv")
     if include.agent_tasks:
         files.append("agent_tasks.csv")
+    if include.agent_mention_requests:
+        files.append("agent_mention_requests.csv")
+    if include.agent_task_events:
+        files.append("agent_task_events.csv")
     if include.analysis_snapshots:
         files.append("analysis_snapshots.csv")
+    if include.task_definitions:
+        files.append("task_definitions.csv")
+    if include.task_flow_states:
+        files.append("task_flow_states.csv")
+    if include.writing_submission_states:
+        files.append("writing_submission_states.csv")
     if include.writing_docs:
         files.append("writing_docs.csv")
+    if include.writing_snapshots:
+        files.append("writing_snapshots_5min.csv")
     if include.writing_change_logs:
         files.append("writing_change_logs.csv")
     if include.room_writing_html:
@@ -445,9 +557,15 @@ async def build_export_payload(
             "room_members": len(room_members),
             "messages": len(messages),
             "agent_tasks": len(agent_tasks),
+            "agent_mention_requests": len(agent_mention_requests),
+            "agent_task_events": len(agent_task_events),
             "analysis_snapshots": len(analysis_snapshots),
             "writing_docs": len(writing_docs),
             "writing_change_logs": len(writing_change_logs),
+            "writing_snapshots": len(writing_snapshots),
+            "task_definitions": len(task_definitions),
+            "task_flow_states": len(task_flow_states),
+            "writing_submission_states": len(writing_submission_states),
         },
         "estimated_files": files,
         "data": {
@@ -455,9 +573,15 @@ async def build_export_payload(
             "room_members": room_members,
             "messages": messages,
             "agent_tasks": agent_tasks,
+            "agent_mention_requests": agent_mention_requests,
+            "agent_task_events": agent_task_events,
             "analysis_snapshots": analysis_snapshots,
             "writing_docs": writing_docs,
             "writing_change_logs": writing_change_logs,
+            "writing_snapshots": writing_snapshots,
+            "task_definitions": task_definitions,
+            "task_flow_states": task_flow_states,
+            "writing_submission_states": writing_submission_states,
             "room_writing_html": room_writing_html,
         },
     }
@@ -497,6 +621,7 @@ def build_export_zip_bytes(payload: dict[str, Any]) -> bytes:
                     "timer_deadline_at",
                     "timer_stopped_at",
                     "locked_member_ids",
+                    "agent_mode",
                 ],
             ),
         )
@@ -551,6 +676,22 @@ def build_export_zip_bytes(payload: dict[str, Any]) -> bytes:
             ),
         )
         zf.writestr(
+            "agent_task_events.csv",
+            _csv_bytes(rows.get("agent_task_events", []), [
+                "room_id", "task_id", "at", "agent_role", "trigger_type",
+                "status", "reason", "source_message_id", "queued_at",
+                "running_at", "finished_at", "error", "drop_reason", "created_at",
+            ]),
+        )
+        zf.writestr(
+            "agent_mention_requests.csv",
+            _csv_bytes(rows.get("agent_mention_requests", []), [
+                "room_id", "entry_id", "agent_role", "source_message_id",
+                "student_name", "reason", "strategy", "trigger_type",
+                "created_at", "status", "status_reason", "task_id", "error", "updated_at",
+            ]),
+        )
+        zf.writestr(
             "analysis_snapshots.csv",
             _csv_bytes(
                 rows["analysis_snapshots"],
@@ -572,6 +713,12 @@ def build_export_zip_bytes(payload: dict[str, Any]) -> bytes:
                 ],
             ),
         )
+        for filename, fields in (
+            ("task_definitions.csv", ["task_id", "title", "requirements", "scripts", "discussion_template", "created_by"]),
+            ("task_flow_states.csv", ["room_id", "task_id", "scripts", "created_at", "updated_at"]),
+            ("writing_submission_states.csv", ["room_id", "required_confirmations", "confirmations", "final_submitted_at"]),
+        ):
+            zf.writestr(filename, _csv_bytes(rows.get(filename.removesuffix(".csv"), []), fields))
         zf.writestr(
             "writing_docs.csv",
             _csv_bytes(
@@ -585,6 +732,13 @@ def build_export_zip_bytes(payload: dict[str, Any]) -> bytes:
                     "updated_by_display_name",
                     "content_text_preview",
                 ],
+            ),
+        )
+        zf.writestr(
+            "writing_snapshots_5min.csv",
+            _csv_bytes(
+                rows.get("writing_snapshots", []),
+                ["room_id", "elapsed_minutes", "scheduled_at", "captured_at", "version", "updated_at", "updated_by", "content_html", "content_text", "text_length"],
             ),
         )
         zf.writestr(

@@ -82,7 +82,7 @@ const { connect, on, send, disconnect, connected } = useWebSocket(roomId)
 const { handleTyping, handleStream, handleStreamEnd } = useAgentStream()
 
 const ROLE_NAMES = {
-  socratic: '苏格拉底智能体',
+  socratic: '单智能体助手',
   facilitator: '主持人',
   devil_advocate: '批判者',
   summarizer: '总结者',

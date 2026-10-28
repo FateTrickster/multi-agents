@@ -53,7 +53,7 @@ async def get_writing_doc_state(room_id: str) -> dict:
 async def _append_change_log(room_id: str, item: dict) -> None:
     redis_client = get_redis_client()
     await redis_client.lpush(_change_log_key(room_id), json.dumps(item, ensure_ascii=False))
-    await redis_client.ltrim(_change_log_key(room_id), 0, CHANGE_LOG_MAX_LEN - 1)
+    # Keep the complete research event history; never trim past edits.
 
 
 def _build_change_summary(before_content: str, after_content: str, action: str) -> tuple[str, int]:

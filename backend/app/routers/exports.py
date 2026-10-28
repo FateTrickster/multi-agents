@@ -22,14 +22,21 @@ class ExportIncludeModel(BaseModel):
     room_members: bool = True
     messages: bool = True
     agent_tasks: bool = True
+    agent_mention_requests: bool = True
+    agent_task_events: bool = True
     analysis_snapshots: bool = True
     writing_docs: bool = True
     writing_change_logs: bool = True
+    writing_snapshots: bool = True
+    task_definitions: bool = True
+    task_flow_states: bool = True
+    writing_submission_states: bool = True
     room_writing_html: bool = True
 
 
 class ExportRequest(BaseModel):
     room_id: str | None = None
+    room_ids: list[str] | None = None
     room_name_prefix: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
@@ -42,9 +49,15 @@ def _to_include_model(data: ExportIncludeModel) -> ExportInclude:
         room_members=data.room_members,
         messages=data.messages,
         agent_tasks=data.agent_tasks,
+        agent_mention_requests=data.agent_mention_requests,
+        agent_task_events=data.agent_task_events,
         analysis_snapshots=data.analysis_snapshots,
         writing_docs=data.writing_docs,
         writing_change_logs=data.writing_change_logs,
+        writing_snapshots=data.writing_snapshots,
+        task_definitions=data.task_definitions,
+        task_flow_states=data.task_flow_states,
+        writing_submission_states=data.writing_submission_states,
         room_writing_html=data.room_writing_html,
     )
 
@@ -76,6 +89,7 @@ async def preview_export(
     payload = await export_service.build_export_payload(
         db,
         room_id=data.room_id,
+        room_ids=data.room_ids,
         room_name_prefix=data.room_name_prefix,
         start_time=data.start_time,
         end_time=data.end_time,
@@ -97,6 +111,7 @@ async def download_export(
     payload = await export_service.build_export_payload(
         db,
         room_id=data.room_id,
+        room_ids=data.room_ids,
         room_name_prefix=data.room_name_prefix,
         start_time=data.start_time,
         end_time=data.end_time,

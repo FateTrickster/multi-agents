@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 
 from app.agents.agent_mode import can_use_agent_role
 from app.agents.role_agents import ROLE_AGENTS, SocraticAgent
@@ -12,7 +12,7 @@ def test_role_agents_registers_socratic():
 def test_socratic_agent_metadata():
     agent = ROLE_AGENTS["socratic"]
     assert agent.ROLE == "socratic"
-    assert agent.ROLE_DISPLAY_NAME == "苏格拉底智能体"
+    assert agent.ROLE_DISPLAY_NAME == "单智能体助手"
     assert agent.PROMPT_FILE == "socratic.txt"
     assert agent.SKILL_DIR == "socratic"
 
@@ -33,7 +33,7 @@ def test_socratic_prompt_and_skill_files_exist():
     assert (base / "skills" / "socratic" / "SKILL.md").exists()
 
 
-def test_socratic_system_prompt_has_core_constraints():
+def test_single_agent_prompt_has_no_socratic_only_constraints():
     agent = ROLE_AGENTS["socratic"]
     prompt = agent.build_system_prompt(
         context={
@@ -44,9 +44,17 @@ def test_socratic_system_prompt_has_core_constraints():
         },
         task={"reason": "学生主动提问", "strategy": "用问题推动思考", "trigger_type": "mention"},
     )
+    assert "通用 AI 助手" in prompt
+    assert "可以回答问题" in prompt
+    assert "不强制使用苏格拉底式提问" in prompt
+    assert "[Dispatcher Task]" not in prompt
+    assert "不提供最终答案" not in prompt
+    assert agent.MAX_TOKENS >= 2048
 
-    assert "苏格拉底" in prompt
-    assert "不提供最终答案" in prompt or "不直接给答案" in prompt
-    assert "不代写" in prompt
-    assert "不润色成可提交版本" in prompt or "不润色" in prompt
-    assert "每次尽量只提出 1 个核心问题" in prompt or "1 个核心问题" in prompt
+
+def test_single_agent_messages_without_role_self_check():
+    agent = ROLE_AGENTS["socratic"]
+    messages = agent.build_messages([{"display_name": "学生A", "content": "请直接解释概念并给出例子"}])
+    assert "请直接解释概念并给出例子" in messages[0]["content"]
+    assert "Output Self-Check" not in str(messages)
+    assert "请根据以上讨论" in messages[-1]["content"]

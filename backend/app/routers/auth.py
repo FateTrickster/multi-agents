@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from app.db.session import get_db
 from app.db.redis_client import get_user_active_session_jti, set_user_active_session_jti
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, UserResponse
 from app.services.auth_service import hash_password, verify_password, create_access_token
 from app.dependencies import get_current_user
@@ -16,6 +16,8 @@ router = APIRouter()
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(data: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    if data.role != UserRole.student:
+        raise HTTPException(status_code=403, detail="教师账号不能通过公共注册创建，请联系平台管理员")
     result = await db.execute(select(User).where(User.username == data.username))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="用户名已存在")

@@ -83,7 +83,7 @@
         <div class="grid grid-cols-1 gap-2 md:grid-cols-2">
           <label v-for="key in includeKeys" :key="key" class="flex items-center gap-2 text-sm text-gray-700">
             <input v-model="include[key]" type="checkbox" />
-            {{ key }}
+            {{ key === 'writing_snapshots' ? '写作区每5分钟历史快照' : key }}
           </label>
         </div>
       </section>
@@ -97,9 +97,15 @@
           <p>room_members: {{ previewResult.counts?.room_members || 0 }}</p>
           <p>messages: {{ previewResult.counts?.messages || 0 }}</p>
           <p>agent_tasks: {{ previewResult.counts?.agent_tasks || 0 }}</p>
+          <p>agent_mention_requests: {{ previewResult.counts?.agent_mention_requests || 0 }}</p>
+          <p>agent_task_events: {{ previewResult.counts?.agent_task_events || 0 }}</p>
           <p>analysis_snapshots: {{ previewResult.counts?.analysis_snapshots || 0 }}</p>
           <p>writing_docs: {{ previewResult.counts?.writing_docs || 0 }}</p>
           <p>writing_change_logs: {{ previewResult.counts?.writing_change_logs || 0 }}</p>
+          <p>writing_snapshots (5 min): {{ previewResult.counts?.writing_snapshots || 0 }}</p>
+          <p>task_definitions: {{ previewResult.counts?.task_definitions || 0 }}</p>
+          <p>task_flow_states: {{ previewResult.counts?.task_flow_states || 0 }}</p>
+          <p>writing_submission_states: {{ previewResult.counts?.writing_submission_states || 0 }}</p>
           <div>
             <p class="font-medium text-gray-800">estimated_files:</p>
             <ul class="ml-5 list-disc">
@@ -123,9 +129,15 @@ const includeKeys = [
   'room_members',
   'messages',
   'agent_tasks',
+  'agent_mention_requests',
+  'agent_task_events',
   'analysis_snapshots',
   'writing_docs',
   'writing_change_logs',
+  'writing_snapshots',
+  'task_definitions',
+  'task_flow_states',
+  'writing_submission_states',
   'room_writing_html',
 ]
 
@@ -140,9 +152,15 @@ const include = reactive({
   room_members: true,
   messages: true,
   agent_tasks: true,
+  agent_mention_requests: true,
+  agent_task_events: true,
   analysis_snapshots: true,
   writing_docs: true,
   writing_change_logs: true,
+  writing_snapshots: true,
+  task_definitions: true,
+  task_flow_states: true,
+  writing_submission_states: true,
   room_writing_html: true,
 })
 
@@ -177,8 +195,8 @@ function buildPayload() {
   if (startTime) payload.start_time = startTime
   if (endTime) payload.end_time = endTime
 
-  if (selectedRoomIds.value.length === 1) {
-    payload.room_id = selectedRoomIds.value[0]
+  if (selectedRoomIds.value.length > 0) {
+    payload.room_ids = [...selectedRoomIds.value]
   }
   return payload
 }

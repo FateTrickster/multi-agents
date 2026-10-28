@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="relative border-t border-gray-200 bg-white p-3">
     <div v-if="selectedMentions.length > 0" class="mb-2 flex flex-wrap items-center gap-2">
       <span class="text-xs text-gray-500">Selected agents:</span>
@@ -84,7 +84,7 @@ const props = defineProps({
 const emit = defineEmits(['send'])
 
 const AGENT_OPTIONS = [
-  { role: 'socratic', label: '苏格拉底智能体' },
+  { role: 'socratic', label: '单智能体助手' },
   { role: 'facilitator', label: '主持人' },
   { role: 'devil_advocate', label: '批判者' },
   { role: 'summarizer', label: '总结者' },

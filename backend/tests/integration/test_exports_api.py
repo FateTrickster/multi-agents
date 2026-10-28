@@ -229,3 +229,29 @@ def test_teacher_download_returns_zip_and_required_files(fake_db, monkeypatch):
         assert "agent_tasks.csv" in names
         assert "writing_docs.csv" in names
         assert f"room_writing_{room_id}.html" in names
+
+
+def test_student_cannot_preview_or_download_even_with_direct_api_calls(fake_db):
+    client = TestClient(_build_app(_student_user(), fake_db))
+    for route in ("/api/exports/preview", "/api/exports/download"):
+        response = client.post(route, json={})
+        assert response.status_code == 403, (route, response.text)
+
+
+def test_public_teacher_registration_is_forbidden(fake_db, monkeypatch):
+    from app.routers import auth
+    app = FastAPI()
+    app.include_router(auth.router, prefix="/api/auth")
+
+    async def override_get_db():
+        yield fake_db
+
+    app.dependency_overrides[get_db] = override_get_db
+    client = TestClient(app)
+    response = client.post("/api/auth/register", json={
+        "username": "self_assigned_teacher",
+        "display_name": "Unauthorized teacher",
+        "password": "test_password_123",
+        "role": "teacher",
+    })
+    assert response.status_code == 403

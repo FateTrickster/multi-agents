@@ -57,14 +57,7 @@
           <input v-model="registerForm.password" type="password" required minlength="6"
             class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">角色</label>
-          <select v-model="registerForm.role"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="student">学生</option>
-            <option value="teacher">教师</option>
-          </select>
-        </div>
+        <p class="text-sm text-gray-600">公开注册仅创建学生账号；教师账号请联系平台管理员。</p>
         <p v-if="error" class="text-red-500 text-sm">{{ error }}</p>
         <button type="submit" :disabled="loading"
           class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50">

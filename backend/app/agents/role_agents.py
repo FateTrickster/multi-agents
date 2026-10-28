@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import os
@@ -691,10 +691,35 @@ class ConceptExplainerAgent(BaseRoleAgent):
 
 class SocraticAgent(BaseRoleAgent):
     ROLE = "socratic"
-    ROLE_DISPLAY_NAME = "苏格拉底智能体"
+    ROLE_DISPLAY_NAME = "单智能体助手"
     PROMPT_FILE = "socratic.txt"
     SKILL_DIR = "socratic"
-    MAX_TOKENS = 420
+    MAX_TOKENS = 2048
+
+    def build_system_prompt(self, context: dict, task: dict | None = None) -> str:
+        """Single-agent requests are free from role-specific intervention restrictions."""
+        mention_context = ""
+        if task and task.get("trigger_type") == "mention":
+            mention_context = "一名小组成员正在向你提问，请直接回答其请求。"
+        prompt = self._prompt_template.format(
+            task_description=context.get("task_description", ""),
+            task_workflow=context.get("task_workflow", ""),
+            members_info=context.get("members_info", ""),
+            current_phase=context.get("current_phase", ""),
+            mention_context=mention_context,
+        )
+        return f"{prompt}\n\n{self._skill_spec}" if self._skill_spec else prompt
+
+    def build_messages(self, history: list[dict]) -> list[dict]:
+        messages = [
+            {"role": "user", "content": f"[{msg['display_name']}]: {msg['content']}"}
+            for msg in history[-30:]
+        ]
+        messages.append({
+            "role": "user",
+            "content": "请根据以上讨论，直接回应小组最新提出的请求。",
+        })
+        return messages
 
 
 ROLE_AGENTS: dict[str, BaseRoleAgent] = {

@@ -490,7 +490,7 @@ async def confirm_pending_proposal(
     room_script.scripts = {
         "current_status": final_current_status,
         "next_goal": final_next_goal,
-        "history": new_history[-100:],
+        "history": new_history,
         "pending_proposal": None,
     }
 
