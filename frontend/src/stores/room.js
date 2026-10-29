@@ -1,4 +1,4 @@
-﻿import { defineStore } from 'pinia'
+import { defineStore } from 'pinia'
 import api from '../services/api.js'
 import { roomApi } from '../services/roomApi.js'
 
@@ -313,7 +313,7 @@ export const useRoomStore = defineStore('room', {
       if (!payloadRoomId || payloadRoomId !== this.currentRoomId) return
       const state = payload.state || {}
       this.writingSubmitState = {
-        required_confirmations: Number(state.required_confirmations || 3),
+        required_confirmations: Number(state.required_confirmations || 1),
         confirmations: Array.isArray(state.confirmations) ? state.confirmations : [],
         final_submitted_at: state.final_submitted_at || null,
         action: state.action || null,
@@ -327,7 +327,7 @@ export const useRoomStore = defineStore('room', {
       try {
         const state = await roomApi.getWritingSubmitState(roomId)
         this.writingSubmitState = {
-          required_confirmations: Number(state.required_confirmations || 3),
+          required_confirmations: Number(state.required_confirmations || 1),
           confirmations: Array.isArray(state.confirmations) ? state.confirmations : [],
           final_submitted_at: state.final_submitted_at || null,
           action: state.action || null,
@@ -335,7 +335,7 @@ export const useRoomStore = defineStore('room', {
       } catch (error) {
         this.writingSubmitError = error.response?.data?.detail || 'Load writing submit state failed'
         this.writingSubmitState = {
-          required_confirmations: 3,
+          required_confirmations: 1,
           confirmations: [],
           final_submitted_at: null,
         }
@@ -351,7 +351,7 @@ export const useRoomStore = defineStore('room', {
       try {
         const state = await roomApi.confirmWritingSubmit(roomId)
         this.writingSubmitState = {
-          required_confirmations: Number(state.required_confirmations || 3),
+          required_confirmations: Number(state.required_confirmations || 1),
           confirmations: Array.isArray(state.confirmations) ? state.confirmations : [],
           final_submitted_at: state.final_submitted_at || null,
           action: state.action || null,

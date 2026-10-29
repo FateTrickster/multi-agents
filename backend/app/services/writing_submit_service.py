@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from app.db.redis_client import get_redis_client
 from app.models.user import User
 
-WRITING_REQUIRED_CONFIRMATIONS = 3
+WRITING_REQUIRED_CONFIRMATIONS = 1
 
 
 def _writing_submit_key(room_id: str) -> str:

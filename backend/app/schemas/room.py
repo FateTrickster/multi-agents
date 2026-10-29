@@ -41,7 +41,7 @@ class RoomActivityRequest(BaseModel):
 
 
 class WritingSubmitStateResponse(BaseModel):
-    required_confirmations: int = 3
+    required_confirmations: int = 1
     confirmations: list[dict] = Field(default_factory=list)
     final_submitted_at: Optional[datetime] = None
     action: Optional[str] = None

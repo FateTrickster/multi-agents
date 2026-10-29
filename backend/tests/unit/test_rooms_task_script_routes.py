@@ -218,7 +218,7 @@ def test_get_writing_submit_state_returns_service_result(fake_db, monkeypatch):
         return room
 
     async def _fake_get_state(_room_id_str):
-        return {"required_confirmations": 3, "confirmations": [], "final_submitted_at": None}
+        return {"required_confirmations": 1, "confirmations": [], "final_submitted_at": None}
 
     monkeypatch.setattr(rooms.room_service, "get_room", _fake_get_room)
     monkeypatch.setattr(rooms.writing_submit_service, "get_writing_submit_state", _fake_get_state)
@@ -226,7 +226,7 @@ def test_get_writing_submit_state_returns_service_result(fake_db, monkeypatch):
     resp = client.get(f"/api/rooms/{room_id}/writing-submit")
 
     assert resp.status_code == 200
-    assert resp.json()["required_confirmations"] == 3
+    assert resp.json()["required_confirmations"] == 1
 
 
 def test_confirm_writing_submit_forbidden_for_teacher(fake_db, monkeypatch):

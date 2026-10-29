@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-3">
     <div class="mb-2 flex items-center justify-between">
       <p class="text-xs font-semibold uppercase tracking-wide text-gray-400">写作区</p>
@@ -212,14 +212,14 @@ const storageKey = computed(() => `room:${roomId}:writing_draft`)
 const writingState = computed(() => {
   return (
     roomStore.writingSubmitState || {
-      required_confirmations: 3,
+      required_confirmations: 1,
       confirmations: [],
       final_submitted_at: null,
     }
   )
 })
 
-const requiredConfirmations = computed(() => Number(writingState.value.required_confirmations || 3))
+const requiredConfirmations = computed(() => Number(writingState.value.required_confirmations || 1))
 const confirmations = computed(() => (Array.isArray(writingState.value.confirmations) ? writingState.value.confirmations : []))
 const confirmCount = computed(() => confirmations.value.length)
 const isFinalSubmitted = computed(() => !!writingState.value.final_submitted_at)
