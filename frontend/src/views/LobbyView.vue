@@ -18,9 +18,9 @@
         <button class="rounded-lg border border-indigo-200 bg-white px-4 py-2 text-indigo-700 hover:bg-indigo-50" @click="openTemplateManagerModal">
           {{ TXT.manageTemplates }}
         </button>
-        <button class="rounded-lg border border-emerald-200 bg-white px-4 py-2 text-emerald-700 hover:bg-emerald-50" @click="goTeacherExports">
+        <a href="/teacher/exports" class="rounded-lg border border-emerald-200 bg-white px-4 py-2 text-emerald-700 hover:bg-emerald-50">
           {{ TXT.exportData }}
-        </button>
+        </a>
         <button class="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700" @click="openCreateModal">
           + {{ TXT.createRoom }}
         </button>
