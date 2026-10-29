@@ -245,26 +245,53 @@ def test_confirm_writing_submit_forbidden_for_teacher(fake_db, monkeypatch):
     assert resp.status_code == 403
 
 
-def test_start_room_timer_requires_three_students(fake_db, monkeypatch):
+def test_start_room_timer_without_minimum_students(fake_db, monkeypatch):
     room_id = uuid.uuid4()
     room = Room(id=room_id, name="R1", created_by=uuid.uuid4())
-    teacher = _teacher_user()
-    client = _build_client(fake_db, teacher)
+    room.status = RoomStatus.waiting
+    room.agent_mode = "none"
+    client = _build_client(fake_db, _teacher_user())
+    student_count = 0
 
     async def _fake_get_room(_db, _room_id):
         return room
 
     async def _fake_student_count(_db, _room_id):
-        return 2
+        return student_count
+
+    async def _fake_start_timer(_db, _room):
+        room.timer_started_at = datetime.now(timezone.utc)
+        return room
+
+    async def _fake_submit_state(_room_id):
+        return {}
+
+    async def _fake_member_count(_db, _room_id):
+        return student_count
+
+    async def _fake_online_count(_room_id):
+        return student_count
+
+    async def _fake_publish(*_args):
+        return None
+
+    def _no_redis():
+        raise RuntimeError("unavailable during test")
 
     monkeypatch.setattr(rooms.room_service, "get_room", _fake_get_room)
     monkeypatch.setattr(rooms.room_service, "get_student_count", _fake_student_count)
+    monkeypatch.setattr(rooms.room_service, "start_room_timer", _fake_start_timer)
+    monkeypatch.setattr(rooms.room_service, "get_member_count", _fake_member_count)
+    monkeypatch.setattr(rooms.writing_submit_service, "clear_writing_submit_state", _fake_submit_state)
+    monkeypatch.setattr(rooms, "get_redis_client", _no_redis)
+    monkeypatch.setattr(rooms, "_get_online_count", _fake_online_count)
+    monkeypatch.setattr(rooms, "_publish_room_timer_update", _fake_publish)
+    monkeypatch.setattr(rooms, "_publish_writing_submit_updated", _fake_publish)
 
-    resp = client.post(f"/api/rooms/{room_id}/timer/start")
-
-    assert resp.status_code == 400
-    assert resp.json()["detail"]["code"] == "ROOM_STUDENT_COUNT_NOT_ENOUGH"
-
+    for student_count in (0, 1, 2, 3):
+        resp = client.post(f"/api/rooms/{room_id}/timer/start")
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["student_count"] == student_count
 
 def test_get_writing_doc_state_returns_service_result(fake_db, monkeypatch):
     room_id = uuid.uuid4()
@@ -340,6 +367,8 @@ def test_save_writing_doc_version_forbidden_for_teacher(fake_db, monkeypatch):
     room_id = uuid.uuid4()
     room = Room(id=room_id, name="R1", created_by=uuid.uuid4())
     fake_db.execute_result = FakeExecuteResult(scalar_value=object())
+    room.status = RoomStatus.waiting
+    room.agent_mode = "none"
     client = _build_client(fake_db, _teacher_user())
 
     async def _fake_get_room(_db, _room_id):

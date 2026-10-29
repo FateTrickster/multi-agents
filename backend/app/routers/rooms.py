@@ -32,7 +32,6 @@ from app.services.message_service import MessageService
 
 router = APIRouter()
 MIN_WRITING_SUBMIT_CHARS = 50
-MIN_STUDENTS_TO_START_TIMER = 3
 
 
 async def _ensure_room_member(db: AsyncSession, room_id: UUID, user_id: UUID) -> None:
@@ -250,17 +249,6 @@ async def start_room_timer(
     if not room:
         raise RoomNotFoundError()
     student_count = await room_service.get_student_count(db, room.id)
-    if student_count < MIN_STUDENTS_TO_START_TIMER:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "message": f"当前学生人数不足{MIN_STUDENTS_TO_START_TIMER}人，无法开始计时",
-                "code": "ROOM_STUDENT_COUNT_NOT_ENOUGH",
-                "current_count": student_count,
-                "required_count": MIN_STUDENTS_TO_START_TIMER,
-            },
-        )
-
     room = await room_service.start_room_timer(db, room)
     writing_state = await writing_submit_service.clear_writing_submit_state(str(room.id))
     count = await room_service.get_member_count(db, room.id)
